@@ -118,8 +118,8 @@ async function render() {
         }
 
           <div class="card-actions">
-            ${n.fileType === "application/pdf" ? `<button onclick="openPreview('${n.viewUrl}', '${n.fileType}')" class="view-btn">👁️ Preview</button>` : ''}
-            <a href="${n.downloadUrl}" download class="download-btn">⬇️ Download Note</a>
+            <button onclick="openPreview('${n.viewUrl || n.fileUrl}', '${n.fileType}')" class="view-btn">👁️ Preview</button>
+            <a href="${n.downloadUrl || n.fileUrl}" download class="download-btn">⬇️ Download Note</a>
             <button onclick="deleteFile('${n.id}')" class="delete-btn">🗑️ Delete</button>
           </div>
         </div>
@@ -252,9 +252,12 @@ function openPreview(url, type) {
     container.innerHTML = `<iframe src="${url}" title="PDF Preview"></iframe>`;
   } else if (type && type.startsWith("image/")) {
     container.innerHTML = `<img src="${url}" alt="Image Preview">`;
+  } else if (type && (type.includes("text") || type.includes("document"))) {
+    // For text and document files, try to preview in iframe
+    container.innerHTML = `<iframe src="${url}" title="Document Preview"></iframe>`;
   } else {
-    // Default to image if type is unknown
-    container.innerHTML = `<img src="${url}" alt="Image Preview">`;
+    // Default to iframe for other file types
+    container.innerHTML = `<iframe src="${url}" title="File Preview"></iframe>`;
   }
 
   modal.classList.add("active");

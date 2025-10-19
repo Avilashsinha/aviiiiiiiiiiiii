@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
+import { getNotes, addNote } from './store.js';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -12,12 +13,6 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }
 });
 
-// Persistent data store using global
-if (!global.persistentNotes) {
-  global.persistentNotes = [];
-}
-let dataStore = global.persistentNotes;
-
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -29,7 +24,7 @@ export default function handler(req, res) {
 
   // Handle GET requests (for /api/notes)
   if (req.method === 'GET') {
-    return res.json(dataStore.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    return res.json(getNotes());
   }
 
   // Handle POST requests (for /api/upload)
@@ -44,7 +39,7 @@ export default function handler(req, res) {
 
         try {
           const { title, subject, desc, type } = req.body;
-          
+
           if (!req.file || !title) {
             res.status(400).json({ error: "File and title required" });
             resolve();
@@ -52,7 +47,7 @@ export default function handler(req, res) {
           }
 
           const resourceType = type === 'image' ? 'image' : 'raw';
-          
+
           const uploadResult = await new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
               {
@@ -82,7 +77,7 @@ export default function handler(req, res) {
             createdAt: new Date()
           };
 
-          dataStore.push(note);
+          addNote(note);
 
           res.status(201).json({
             message: "File uploaded successfully!",

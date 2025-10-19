@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
+import { getNotes, addNote } from '../store.js';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -12,9 +13,6 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }
 });
 
-// In-memory storage
-let notes = [];
-
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -25,7 +23,7 @@ export default function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    return res.json(notes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    return res.json(getNotes());
   }
 
   if (req.method === 'POST') {
@@ -39,7 +37,7 @@ export default function handler(req, res) {
 
         try {
           const { title, subject, desc, type } = req.body;
-          
+
           if (!req.file || !title) {
             res.status(400).json({ error: "File and title required" });
             resolve();
@@ -47,7 +45,7 @@ export default function handler(req, res) {
           }
 
           const resourceType = type === 'image' ? 'image' : 'raw';
-          
+
           const uploadResult = await new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
               {
@@ -77,7 +75,7 @@ export default function handler(req, res) {
             createdAt: new Date()
           };
 
-          notes.push(note);
+          addNote(note);
 
           res.status(201).json({
             message: "File uploaded successfully!",

@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
+import { addNote } from './store.js';
 
 cloudinary.config({
   cloud_name: "dwm9m3dwk",
@@ -11,10 +12,6 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
 });
-
-if (!global.appNotes) {
-  global.appNotes = [];
-}
 
 export default function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -64,6 +61,7 @@ export default function handler(req, res) {
           title: title.trim(),
           subject: subject?.trim() || "",
           desc: desc?.trim() || "",
+          type: "note",
           fileName: req.file.originalname,
           fileUrl: uploadResult.secure_url,
           publicId: uploadResult.public_id,
@@ -72,7 +70,7 @@ export default function handler(req, res) {
           createdAt: new Date(),
         };
 
-        global.appNotes.push(note);
+        addNote(note);
 
         res.status(201).json({
           message: "✅ File uploaded successfully!",
